@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  SUPER_ADMIN
+  TEAM_MEMBER
+  CLIENT
+  CLIENT_USER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  userType  UserType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Who created/owns this user
+  createdById String?
+  createdBy   User?   @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers User[] @relation("UserCreatedBy")
+
+  // If this user is a CLIENT_USER,
+  // this tells which CLIENT they belong to
+  clientId String?
+  client   User?   @relation("ClientUsers", fields: [clientId], references: [id])
+  clientUsers User[] @relation("ClientUsers")
+
+  // User's roles
+  roles UserRole[]
+
+  // Roles owned by this CLIENT
+  clientRoles Role[] @relation("ClientRoles")
+
+  // Modules directly assigned to this CLIENT
+  clientModules ClientModule[] @relation("ClientModules")
+
+  // Modules directly assigned to this TEAM_MEMBER
+  teamMemberModules TeamMemberModule[] @relation("TeamMemberModules")
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Role belongs to a CLIENT
+  clientId String
+  client   User @relation("ClientRoles", fields: [clientId], references: [id], onDelete: Cascade)
+
+  users   UserRole[]
+  modules RoleModule[]
+
+  @@unique([clientId, name])
+}
+
+model Module {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles RoleModule[]
+
+  // Modules assigned directly to clients
+  clientModules ClientModule[]
+
+  // Modules assigned to team members
+  teamMemberModules TeamMemberModule[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RoleModule {
+  roleId   String
+  moduleId String
+
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, moduleId])
+}
+
+model ClientModule {
+  clientId String
+  moduleId String
+
+  client User   @relation("ClientModules", fields: [clientId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@id([clientId, moduleId])
+}
+
+model TeamMemberModule {
+  teamMemberId String
+  moduleId     String
+
+  teamMember User   @relation("TeamMemberModules", fields: [teamMemberId], references: [id], onDelete: Cascade)
+  module     Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@id([teamMemberId, moduleId])
+}
