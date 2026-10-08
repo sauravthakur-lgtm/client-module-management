@@ -290,4 +290,83 @@ export class ClientsService {
     })),
   };
 }
+async getAllClients() {
+  const clients = await this.prisma.user.findMany({
+    where: {
+      userType: 'CLIENT',
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      userType: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return {
+    message: 'Clients fetched successfully',
+    total: clients.length,
+    clients,
+  };
+}
+async getClientById(clientId: string) {
+  const client = await this.prisma.user.findFirst({
+    where: {
+      id: clientId,
+      userType: 'CLIENT',
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      userType: true,
+    },
+  });
+
+  if (!client) {
+    throw new ConflictException('Client not found');
+  }
+
+  return {
+    message: 'Client fetched successfully',
+    client,
+  };
+}
+async getAllRoles(clientId: string) {
+  // 1. Check client exists
+  const client = await this.prisma.user.findUnique({
+    where: {
+      id: clientId,
+    },
+  });
+
+  if (!client || client.userType !== 'CLIENT') {
+    throw new ConflictException('Client not found');
+  }
+
+  // 2. Get all roles for this client
+  const roles = await this.prisma.role.findMany({
+    where: {
+      clientId,
+    },
+    select: {
+      id: true,
+      name: true,
+      clientId: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
+
+  // 3. Return response
+  return {
+    message: 'Roles fetched successfully',
+    total: roles.length,
+    roles,
+  };
+}
 }

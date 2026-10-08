@@ -299,4 +299,74 @@ export class ClientsController {
       roleId,
     );
   }
+// =========================================================
+// Get All Clients
+// Super Admin only
+// =========================================================
+
+@Get()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SUPER_ADMIN')
+@ApiOperation({
+  summary: 'Get all clients',
+  description: 'Returns all registered clients. Super Admin only.',
+})
+@ApiResponse({
+  status: 200,
+  description: 'Clients fetched successfully.',
+})
+@ApiResponse({
+  status: 401,
+  description: 'Unauthorized.',
+})
+@ApiResponse({
+  status: 403,
+  description: 'Forbidden. Only Super Admin can access this endpoint.',
+})
+getAllClients() {
+  return this.clientsService.getAllClients();
+}
+@Get(':clientId')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SUPER_ADMIN')
+@ApiOperation({
+  summary: 'Get client by ID',
+  description: 'Fetches a single client by ID. Super Admin only.',
+})
+@ApiResponse({
+  status: 200,
+  description: 'Client fetched successfully.',
+})
+@ApiResponse({
+  status: 404,
+  description: 'Client not found.',
+})
+getClientById(@Param('clientId') clientId: string) {
+  return this.clientsService.getClientById(clientId);
+}
+
+// Get All Roles for a Client
+// Super Admin only
+@Get(':clientId/roles')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SUPER_ADMIN')
+@ApiOperation({
+  summary: 'Get all roles for a client',
+  description: 'Returns all roles belonging to a specific client. Super Admin only.',
+})
+@ApiResponse({
+  status: 200,
+  description: 'Roles fetched successfully.',
+})
+@ApiResponse({
+  status: 401,
+  description: 'Unauthorized.',
+})
+@ApiResponse({
+  status: 403,
+  description: 'Forbidden. Only Super Admin can access this endpoint.',
+})
+getAllRoles(@Param('clientId') clientId: string) {
+  return this.clientsService.getAllRoles(clientId);
+}
 }
